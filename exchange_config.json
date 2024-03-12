@@ -1,0 +1,7 @@
+{
+  "binance": {
+    "type": "spot",
+    "apiKey": "arelVdKxWiBm7Mp77hx8nONoWLp37gyrVd7CrKMwD7XOBBxWiCeg3JIehiJ0nAoO",
+    "secret": "ohMRXHppUEvZScqQ1mq5lmIu5FAAX4xzM4fW6RDfy2gG0gLBOOIYG6eKeNJV7wTo"
+  }
+}
