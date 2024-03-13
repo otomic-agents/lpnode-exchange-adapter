@@ -1,4 +1,5 @@
 import logging
+import json
 
 
 class Balance:
@@ -10,14 +11,22 @@ class Balance:
     def balance(self):
         return self._balance
 
+    async def get_spot_balances(self):
+        return self.spot_balanace
+
     async def update(self):
+        skip_key_list = ["info", "free", "used", "total", "timestamp", "datetime"]
         try:
             balance_info = await self.exchange.fetchBalance()
             logging.info("Updating balance")
-            info = balance_info.get("info")
-            balances = info.get("balances")
-            for balance in balances:
-                self.spot_balanace[balance["asset"]] = balance
-            logging.info(f"Updated balance,assets count:{len(balances)}")
-        except:
-            logging.error("Error updating balance")
+            # print(json.dumps(balance_info))
+            i = 0
+            for key, value in balance_info.items():
+                if key in skip_key_list:
+                    # logging.info(f"skip key:{skip_key_list}")
+                    continue
+                i = i + 1
+                self.spot_balanace[key] = value
+            logging.info(f"Updated balance,assets count:{i}")
+        except Exception as e:
+            logging.error(f"Error updating balance:{e}")

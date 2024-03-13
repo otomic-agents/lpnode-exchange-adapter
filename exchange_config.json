@@ -1,7 +1,30 @@
 {
   "binance": {
     "type": "spot",
-    "apiKey": "arelVdKxWiBm7Mp77hx8nONoWLp37gyrVd7CrKMwD7XOBBxWiCeg3JIehiJ0nAoO",
-    "secret": "ohMRXHppUEvZScqQ1mq5lmIu5FAAX4xzM4fW6RDfy2gG0gLBOOIYG6eKeNJV7wTo"
+    "orderbook": {
+      "limit": 10
+    },
+    "hasSandbox": true
+  },
+  "huobi": {
+    "type": "spot",
+    "orderbook": {
+      "limit": 20
+    },
+    "hasSandbox": false
+  },
+  "okx": {
+    "type": "spot",
+    "orderbook": {
+      "limit": 20
+    },
+    "hasSandbox": true
+  },
+  "gate": {
+    "type": "spot",
+    "orderbook": {
+      "limit": 5
+    },
+    "hasSandbox": false
   }
 }
