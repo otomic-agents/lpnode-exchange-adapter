@@ -15,19 +15,26 @@ class AccountMain:
 
     async def get_spot_balances(self):
         """
-        获取现货账户余额
+        get spot account balance
         :return:
         """
         return await self.balance.get_spot_balances()
 
     async def sync_balance(self):
         """
-        同步余额方法，调用 Balance 类的相关方法进行同步操作
+        synchronize balance method, call relevant methods of the Balance class for synchronization
         """
-        while True:
-            await self.balance.update()
-            logging.info("10 seconds later, balance will be updated.")
-            await asyncio.sleep(10)
+        try:
+            while True:
+                if self.exchange.apiKey == None or self.exchange.apiKey == "":
+                    logging.warning("No account has been initialized.")
+                    await anyio.sleep(10)
+                    continue
+                await self.balance.update()
+                # logging.info("10 seconds later, balance will be updated.")
+                await asyncio.sleep(10)
+        except Exception as e:
+            raise e
 
     async def main(self):
         try:

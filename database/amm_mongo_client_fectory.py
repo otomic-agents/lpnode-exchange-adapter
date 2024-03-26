@@ -11,7 +11,7 @@ class AmmMongoClientFactory:
         if self.client is not None:
             return self.client
         else:
-            # 更新环境变量的默认值
+            # update the default values of environment variables
             host = os.environ.get("MONGODB_HOST", "localhost")
             port = os.environ.get("MONGODB_PORT", "27017")
             user = os.environ.get("MONGODB_ACCOUNT", "readWriteAnyDb")
@@ -19,7 +19,7 @@ class AmmMongoClientFactory:
             db = os.environ.get("MONGODB_DBNAME_LP_STORE", "ursa_space")
             auth_db = os.environ.get("MONGODB_DBNAME_LP_STORE", "ursa_space")
 
-            # 构建连接字符串并创建客户端
+            # build connection string and create client
             connection_string = (
                 f"mongodb://{user}:{password}@{host}:{port}/{db}?authSource={auth_db}"
             )

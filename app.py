@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# v0.2
 import os
 import sys
 import asyncio
@@ -23,6 +24,16 @@ logging.basicConfig(
     "function %(funcName)s] %(message)s",
     datefmt="%Y-%m-%d:%H:%M:%S",
 )
+root_logger = logging.getLogger()
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler = logging.FileHandler('application.log')  # create a file processor
+file_handler.setFormatter(formatter)
+file_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s:T+%(relativeCreated)d  %(levelname)s [%(pathname)s:%(lineno)d in "
+                              "function %(funcName)s] %(message)s")
+file_handler.setFormatter(formatter)
+root_logger.addHandler(file_handler)
 
 
 class Application:
@@ -41,14 +52,16 @@ class Application:
             self.data_loader.load_amm_cnofig()
             # init exchange and load account config
             self.exchange = await self.create_exchange()
-
-            self.redis_bus_client = RedisBusClient().get_redis_client()
+            redisBusManage= RedisBusClient()
+            self.redis_bus_client = await redisBusManage.get_redis_client()
+            self.redis_bus_sub_pub_client = await redisBusManage.get_pub_sub("LP_SYSTEM_Notice")
             self.market = Market(
-                self.exchange, self.redis_bus_client, self.amm_mongo_client
+                self.exchange, self.redis_bus_client, self.amm_mongo_client,self.redis_bus_sub_pub_client
             )
             self.market_public = MarketPublic(self.exchange)
             self.account = AccountMain(self.exchange)
         except Exception as e:
+            logging.error(e)
             print("init error", e)
 
     async def report_status(self):
@@ -85,8 +98,8 @@ class Application:
             print("start_task_error", e)
 
     async def run_httpd(self):
-        logging.info('The HTTP service will start in 2 seconds.')
-        await asyncio.sleep(2)
+        logging.info('The HTTP service will start in 1 seconds.')
+        await asyncio.sleep(1)
         port = os.environ.get("SERVICE_PORT", "18080")
         await HttpServer(self.market, self.account, self.market_public).run(
             "0.0.0.0", port
@@ -94,16 +107,15 @@ class Application:
 
     async def create_exchange(self):
         print(self.data_loader.getHedgeConfig())
+        amm_config = self.data_loader.get_amm_config()
         hedge_config = self.data_loader.getHedgeConfig()
         hedge_account = self.data_loader.getAccountConfigByHedgeConfig(
             hedge_config)
-        if hedge_account == None:
-            logging.error("not found hedgeconfig account")
-            sys.exit()
-        # sys.exit()
-        hedge_account_api_key = hedge_account["spotAccount"]["apiKey"]
-        hedge_account_api_secret = hedge_account["spotAccount"]["apiSecret"]
-        hedgeExchange = hedge_account["exchangeName"]
+        if hedge_account != None:
+            hedgeExchange = hedge_account["exchangeName"]
+        else:
+            hedgeExchange = amm_config.get("exchangeName") if amm_config.get(
+                "exchangeName") != None else "binance"
         logging.info(f"exchange name :{hedgeExchange}")
         self.exchange_name = hedgeExchange
         exchange_config = load_exchange_config(self.exchange_name)
@@ -115,14 +127,20 @@ class Application:
                 "type": exchange_config.get("type", "spot"),
             }
         )
+        # exchange.verbose = True
         logging.info(f"cur exchange:{self.exchange_name}")
         if has_sandbox:
             logging.info("set type as sandbox")
             exchange.setSandboxMode(True)  # enable sandbox mode
-        exchange.apiKey = hedge_account_api_key
-        logging.info(f"exchange.apiKey: {exchange.apiKey}")
-        exchange.secret = hedge_account_api_secret
-        logging.info(f"exchange.secret: {exchange.secret}")
+        if hedge_account != None:
+            hedge_account_api_key = hedge_account["spotAccount"]["apiKey"]
+            hedge_account_api_secret = hedge_account["spotAccount"]["apiSecret"]
+            exchange.apiKey = hedge_account_api_key
+            logging.info(f"exchange.apiKey: {exchange.apiKey}")
+            exchange.secret = hedge_account_api_secret
+            logging.info(f"exchange.secret: {exchange.secret}")
+        else:
+            logging.warning("No private accounts have been used.")
         exchange.exchange_config = exchange_config
         return exchange
 
@@ -133,8 +151,8 @@ class Application:
             cpu_percent = process.cpu_percent(interval=1)
             memory_info = process.memory_info()
             memory_mb = memory_info.rss / (1024 * 1024)
-            print(f"cpu: {cpu_percent}%")
-            print(f"memory: {memory_mb:.2f} MB")
+            logging.info(f"cpu: {cpu_percent}%")
+            logging.info(f"memory: {memory_mb:.2f} MB")
             await asyncio.sleep(10)
 
     async def run(self):
@@ -144,7 +162,7 @@ class Application:
             print("All tasks finished!")
         except Exception as e:
             logging.error(f"An error occurred: {e}")
-            print("主程序退出..")
+            print("main program exit..")
 
 
 def load_exchange_config(exchange_name):

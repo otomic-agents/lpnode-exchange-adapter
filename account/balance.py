@@ -17,8 +17,8 @@ class Balance:
     async def update(self):
         skip_key_list = ["info", "free", "used", "total", "timestamp", "datetime"]
         try:
+            logging.info("fetchBalance")
             balance_info = await self.exchange.fetchBalance()
-            logging.info("Updating balance")
             # print(json.dumps(balance_info))
             i = 0
             for key, value in balance_info.items():

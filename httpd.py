@@ -59,6 +59,7 @@ class HttpServer:
             return web.json_response(response)
 
     async def handle_spot_orderbook(self, request):
+        logging.info("handle_spot_orderbook");
         orderbook = await self.market.get_spot_orderbook()
         return web.json_response(orderbook)
 
