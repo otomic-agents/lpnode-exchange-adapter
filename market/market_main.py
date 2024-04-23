@@ -73,7 +73,8 @@ class Market:
         collection = db["chainList"]
         documents = collection.find({}, {"tokenName": 1})
         logging.info("find all chanlist token")
-        token_list = [f"{document['tokenName']}/USDT" for document in documents]
+        token_list = [
+            f"{document['tokenName']}/USDT" for document in documents]
         for token in token_list:
             if token not in self.market_symbol_list:
                 logging.info(f"load_chain_list_tokens {token}")
@@ -115,39 +116,29 @@ class Market:
         return {"code": 0, "data": self.orderbook}
 
     async def market_subscribe_main(self):
-        while True:
-            print("market_subscribe_main")
-            try:
-                self.pre_symbol_list()
-                print("restart group")
-                try:
-                    async with create_task_group() as tg:
-                        self.subscribe_task_group = tg
-                        for symbol in self.market_symbol_list:
-                            tg.start_soon(self.subscribe, symbol)
-                    print(f"{self.exchange.id} market_subscribe_main() finished")
-                except asyncio.CancelledError:
-                    print("market_subscribe_main() Cancelled")
-                    sys.exit()
-                    # self.exchange.close()
-                except:
-                    print("market_subscribe_main() exception")
-                finally:
-                    print("20 seconds sleep,wait next market_subscribe_main while")
-                    await asyncio.sleep(20)
-            except Exception as e:
-                print("subscribe market has a error:", e)
-            print("Resubscribe symbol group again in 5 seconds.")
-            await anyio.sleep(5)
-
-    async def restart_subscribe(self):
-        logging.info("restart_subscribe")
+        logging.info("market_subscribe_main")
         try:
-            self.subscribe_task_group.cancel_scope.cancel()
+            self.pre_symbol_list()
+            print("restart group")
+            try:
+                async with create_task_group() as tg:
+                    self.subscribe_task_group = tg
+                    # iterate over all symbols and subscribe to each one individually
+                    for symbol in self.market_symbol_list:
+                        # start a task for each symbol
+                        tg.start_soon(self.subscribe, symbol)
+                print(f"{self.exchange.id} market_subscribe_main() finished")
+                sys.exit(1)
+            except Exception as e:
+                print("market_subscribe_main() exception")
+                print(e)
+                sys.exit(1)
         except Exception as e:
-            print("task exception within the group", e)
+            print("subscribe market has a error:", e)
+            sys.exit(1)
 
     async def listen_message(self):
+        # if subscription fails, continue retrying
         while True:
             try:
                 logging.info(f"listen_message {self.exchange.id} start")
@@ -156,7 +147,8 @@ class Market:
                         ignore_subscribe_messages=True
                     )
                     if message != None:
-                        logging.info(f"listen_message {self.exchange.id} {message}")
+                        logging.info(
+                            f"listen_message {self.exchange.id} {message}")
                         if message["type"] == "message":
                             msg = json.loads(message["data"].decode("utf-8"))
                             print("msg", "🐟", msg)
@@ -167,7 +159,7 @@ class Market:
                                 msg["type"] == "tokenCreate"
                                 or msg["type"] == "tokenDelete"
                             ):
-                                await self.restart_subscribe()
+                                sys.exit()
                     await anyio.sleep(0.1)
             except Exception as e:
                 logging.error(f"listen_message error:{e}")
@@ -175,61 +167,75 @@ class Market:
                 logging.info(f"listen_message restart  10 secs")
                 await anyio.sleep(10)
 
-    async def subscribe(self, symbol: str):
+    async def subscribeSymbol(self, symbol: str):
         orderbook = await self.exchange.watchOrderBook(
             symbol, self.exchange.exchange_config.get("orderbook")["limit"]
         )
         loop_count = 0
         lastWatchTimestamp = int(time.time() * 1000)
         while True:
-            try:
-                await anyio.sleep(1)
-                loop_count += 1
-                if loop_count % 20 == 0:  # 20 seconds watchOrderbook
-                    logging.info(f"re-watch order book symbol:{symbol}")
-                    await self.exchange.watchOrderBook(
-                        symbol, self.exchange.exchange_config.get("orderbook")["limit"]
-                    )
-                if loop_count % 10 == 0:
-                    logging.info(
-                        {
-                            "title": "summary",
-                            "symbol": symbol,
-                            "time": self.exchange.orderbooks[symbol]["datetime"],
-                            "timestamp": self.exchange.orderbooks[symbol]["timestamp"],
-                        }
-                    )
-                currentTimestamp = int(time.time() * 1000)
-                orderbookTimestamp = self.exchange.orderbooks[symbol]["timestamp"]
-                if orderbookTimestamp != None:
-                    if loop_count % 10 == 0:
-                        timediff = format_timestamp_difference(
-                            currentTimestamp,
-                            orderbookTimestamp,
-                        )
-                        logging.info(
-                            f"checking {symbol} timestamp, orderbook age: {timediff}"
-                        )
-                    if currentTimestamp - orderbookTimestamp > 1000 * 120:
-                        raise ValueError(
-                            f"{symbol} Timestamp difference exceeds 60 seconds"
-                        )
-                end_time = time.perf_counter()
-                orderbook = self.exchange.orderbooks[symbol].limit()
-                self.updata_orderbook(orderbook)
-            except asyncio.CancelledError:
-                logging.error("subscribe() cancelled")
-                await asyncio.sleep(1)
-            except Exception as e:
-                logging.error(
-                    f"{self.exchange.id} subscribe({symbol}) watchOrderBook Exception:{e}"
-                )
+            await anyio.sleep(1)
+            # logging.info(f"watch {symbol}")
+            loop_count += 1
+            if loop_count % 20 == 0:  # 20 seconds watchOrderbook
                 logging.info(
-                    f"In 5 seconds, watchOrderBookForSymbols {symbol} will start"
+                    f"re-watch order book symbol:{symbol},loop_count:{loop_count}")
+                await asyncio.wait_for(self.exchange.watchOrderBook(
+                    symbol, self.exchange.exchange_config.get("orderbook")[
+                        "limit"]
+                ), 5.0)
+                logging.info(
+                    f"re-watch sucess symbol:{symbol},loop_count:{loop_count}")
+            if loop_count % 10 == 0:
+                logging.info(
+                    {
+                        "title": "summary",
+                        "symbol": symbol,
+                        "time": self.exchange.orderbooks[symbol]["datetime"],
+                        "timestamp": self.exchange.orderbooks[symbol]["timestamp"],
+                    }
                 )
-                await asyncio.sleep(5)
-            if loop_count >= 1000:
+            currentTimestamp = int(time.time() * 1000)
+            orderbookTimestamp = self.exchange.orderbooks[symbol]["timestamp"]
+            if orderbookTimestamp != None:
+                if loop_count % 10 == 0:
+                    timediff = format_timestamp_difference(
+                        currentTimestamp,
+                        orderbookTimestamp,
+                    )
+                    logging.info(
+                        f"checking {symbol} timestamp, orderbook age: {timediff}"
+                    )
+                if currentTimestamp - orderbookTimestamp > 1000 * 60 * 5:
+                    logging.error(
+                        "orderbook has not been updated for 5 minutes, exit the application")
+                    raise ValueError(
+                        f"{symbol} Timestamp difference exceeds 5 minutes"
+                    )
+            # logging.info(f"limit orderbook {symbol}")
+            orderbook = self.exchange.orderbooks[symbol].limit()
+            # logging.info(f"limit orderbook {symbol} sucess")
+            self.updata_orderbook(orderbook)
+            if loop_count >= 100:
                 loop_count = 0
+
+    async def subscribe(self, symbol: str):
+        while True:
+            task = None
+            try:
+                async with create_task_group() as tg:
+                    logging.info(f"start {symbol} soon")
+                    tg.start_soon(self.subscribeSymbol, symbol)
+                logging.warn(f"subscribe exit  {symbol},  continue while loop")
+                # continue while loop , if subscribeSymbol exit
+                await asyncio.sleep(5)
+            except Exception as e:
+                logging.error(f"subscribe() exception {symbol}")
+                logging.info(
+                    f"subscribeSymbol error: {e.message}, error list is:")
+                logging.info(e.exceptions)
+                logging.info("error list end")
+                await asyncio.sleep(3)  # continue while loop
 
     def updata_orderbook(self, orderbook) -> None:
         symbol = orderbook["symbol"]
@@ -247,13 +253,15 @@ class Market:
         }
 
     async def report_status(self):
-
-        pass
+        while True:
+            logging.info('report eventloop')
+            await asyncio.sleep(60)
 
     async def main(self):
         try:
             async with create_task_group() as tg:
-                tg.start_soon(self.market_subscribe_main)  # main subscription program
+                # main subscription program
+                tg.start_soon(self.market_subscribe_main)
                 tg.start_soon(self.listen_message)
                 tg.start_soon(self.report_status)
         except Exception as e:

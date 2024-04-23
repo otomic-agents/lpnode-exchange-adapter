@@ -14,6 +14,7 @@ class HttpServer:
         self.app.add_routes(
             [
                 web.get("/api/public/fetchMarkets", self.handle_fetch_markets),
+                web.get("/api/public/hasMarket", self.handle_has_market),
                 web.get("/api/spotOrderbook", self.handle_spot_orderbook),
                 web.get("/api/spotBalances", self.handle_spot_balances),
                 web.post('/api/order/createMarketOrder',
@@ -58,8 +59,19 @@ class HttpServer:
         finally:
             return web.json_response(response)
 
+    async def handle_has_market(self, request):
+        response = {"code": 0}
+        try:
+            response["markets"] = await self.market_public.hasMarkets(request)
+        except Exception as e:
+            response["code"] = 1
+            response["markets"] = None
+            response["error"] = str(e)
+        finally:
+            return web.json_response(response)
+
     async def handle_spot_orderbook(self, request):
-        logging.info("handle_spot_orderbook");
+        logging.info("handle_spot_orderbook")
         orderbook = await self.market.get_spot_orderbook()
         return web.json_response(orderbook)
 
@@ -76,7 +88,7 @@ class HttpServer:
             return web.json_response(response)
 
     async def run(self, host="127.0.0.1", port=10086):
-        print(f"Starting server on {host}:{port}...")
+        logging.info(f"Starting server on {host}:{port}...")
         try:
             runner = web.AppRunner(self.app)
             await runner.setup()

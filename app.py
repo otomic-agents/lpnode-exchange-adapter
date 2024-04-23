@@ -27,13 +27,16 @@ logging.basicConfig(
 root_logger = logging.getLogger()
 formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler = logging.FileHandler('application.log')  # create a file processor
-file_handler.setFormatter(formatter)
-file_handler.setLevel(logging.DEBUG)
+
 formatter = logging.Formatter("%(asctime)s:T+%(relativeCreated)d  %(levelname)s [%(pathname)s:%(lineno)d in "
                               "function %(funcName)s] %(message)s")
-file_handler.setFormatter(formatter)
-root_logger.addHandler(file_handler)
+if os.environ.get("WRITE_FILELOG") == "true":
+    file_handler = logging.FileHandler(
+        'application.log')  # create a file processor
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+    root_logger.addHandler(file_handler)
 
 
 class Application:
@@ -52,11 +55,11 @@ class Application:
             self.data_loader.load_amm_cnofig()
             # init exchange and load account config
             self.exchange = await self.create_exchange()
-            redisBusManage= RedisBusClient()
+            redisBusManage = RedisBusClient()
             self.redis_bus_client = await redisBusManage.get_redis_client()
             self.redis_bus_sub_pub_client = await redisBusManage.get_pub_sub("LP_SYSTEM_Notice")
             self.market = Market(
-                self.exchange, self.redis_bus_client, self.amm_mongo_client,self.redis_bus_sub_pub_client
+                self.exchange, self.redis_bus_client, self.amm_mongo_client, self.redis_bus_sub_pub_client
             )
             self.market_public = MarketPublic(self.exchange)
             self.account = AccountMain(self.exchange)
@@ -119,7 +122,6 @@ class Application:
         logging.info(f"exchange name :{hedgeExchange}")
         self.exchange_name = hedgeExchange
         exchange_config = load_exchange_config(self.exchange_name)
-
         exchange_class = getattr(ccxt, self.exchange_name)
         has_sandbox = exchange_config.get("hasSandbox", False)
         exchange = exchange_class(
