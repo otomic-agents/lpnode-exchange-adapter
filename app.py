@@ -16,6 +16,7 @@ from httpd import HttpServer
 from database.amm_mongo_client_fectory import AmmMongoClientFactory
 import psutil
 from datetime import datetime
+import time
 from data_loader.data_loader import DataLoader
 
 logging.basicConfig(
@@ -67,6 +68,27 @@ class Application:
             logging.error(e)
             print("init error", e)
 
+    async def refresh_exchange(self):
+        # Every once in a while, re-create the exchange instance because the ccxt's watchOrderBook function tends to become unresponsive.
+        logging.info("start refresh_exchange")
+        while True:
+            await asyncio.sleep(60*5)
+            logging.info("recreate exchange...")
+            if self.exchange != None:
+                try:
+                    await asyncio.wait_for(self.exchange.close(), 5.0)
+                except Exception as e:
+                    logging.error(e)
+            try:
+                self.exchange = None
+                self.exchange = await self.create_exchange()
+                self.market.set_exchange(self.exchange)
+                self.market_public.set_exchange(self.exchange)
+                self.account.set_exchange(self.exchange)
+            except Exception as create_e:
+                logging.info("recreate exchange error:")
+                logging.error(e)
+
     async def report_status(self):
         while True:
             try:
@@ -95,6 +117,7 @@ class Application:
                 tg.start_soon(self.print_cpu_usage)
                 tg.start_soon(self.report_status)
                 tg.start_soon(self.run_httpd)
+                tg.start_soon(self.refresh_exchange)
         except Exception as e:
             for e_item in e.exceptions:
                 print(e_item)
@@ -131,9 +154,12 @@ class Application:
         )
         # exchange.verbose = True
         logging.info(f"cur exchange:{self.exchange_name}")
-        if has_sandbox:
+        if has_sandbox and os.getenv("RUN_ENV") == "dev":
             logging.info("set type as sandbox")
             exchange.setSandboxMode(True)  # enable sandbox mode
+        else:
+            logging.info("set type is prod")
+
         if hedge_account != None:
             hedge_account_api_key = hedge_account["spotAccount"]["apiKey"]
             hedge_account_api_secret = hedge_account["spotAccount"]["apiSecret"]
@@ -144,9 +170,10 @@ class Application:
         else:
             logging.warning("No private accounts have been used.")
         exchange.exchange_config = exchange_config
+        exchange.exchange_create = time.time()
         return exchange
 
-    @staticmethod
+    @ staticmethod
     async def print_cpu_usage():
         while True:
             process = psutil.Process(os.getpid())
