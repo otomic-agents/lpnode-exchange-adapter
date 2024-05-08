@@ -79,10 +79,14 @@ class Application:
                     await asyncio.wait_for(self.exchange.close(), 5.0)
                 except Exception as e:
                     logging.error(e)
-            self.exchange = await self.create_exchange()
-            self.market.set_exchange(self.exchange)
-            self.market_public.set_exchange(self.exchange)
-            self.account.set_exchange(self.exchange)
+            try:
+                self.exchange = await self.create_exchange()
+                self.market.set_exchange(self.exchange)
+                self.market_public.set_exchange(self.exchange)
+                self.account.set_exchange(self.exchange)
+            except Exception as create_e:
+                logging.info("recreate exchange error:")
+                logging.error(e)
 
     async def report_status(self):
         while True:
