@@ -70,6 +70,7 @@ class Application:
 
     async def refresh_exchange(self):
         # Every once in a while, re-create the exchange instance because the ccxt's watchOrderBook function tends to become unresponsive.
+        logging.info("start refresh_exchange")
         while True:
             await asyncio.sleep(60*5)
             logging.info("recreate exchange...")
