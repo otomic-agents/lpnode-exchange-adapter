@@ -13,6 +13,9 @@ class AccountMain:
         self.order = Order(exchange)
         pass
 
+    def set_exchange(self, exchange):
+        self.exchange = exchange
+
     async def get_spot_balances(self):
         """
         get spot account balance

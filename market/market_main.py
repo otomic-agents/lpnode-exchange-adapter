@@ -64,6 +64,9 @@ class Market:
         self.subscribe_task_group = None
         self.orderbook = {}
 
+    def set_exchange(self, exchange):
+        self.exchange = exchange
+
     def pre_symbol_list(self):
         self.load_chain_list_tokens()
         self.load_bridge_tokens()
@@ -175,6 +178,8 @@ class Market:
         lastWatchTimestamp = int(time.time() * 1000)
         while True:
             await anyio.sleep(1)
+            logging.info(
+                f"exchange create time {self.exchange.exchange_create}")
             # logging.info(f"watch {symbol}")
             loop_count += 1
             if loop_count % 20 == 0 or loop_count == 1:  # 20 seconds watchOrderbook

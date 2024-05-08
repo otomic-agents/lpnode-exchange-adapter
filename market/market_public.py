@@ -9,6 +9,9 @@ class MarketPublic:
         markets = await self.exchange.fetchMarkets()
         return markets
 
+    def set_exchange(self, exchange):
+        self.exchange = exchange
+
     async def hasMarkets(self, request):
         query_params = request.query
         market = query_params.get("market", None)
