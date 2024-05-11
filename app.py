@@ -80,6 +80,7 @@ class Application:
                 except Exception as e:
                     logging.error(e)
             try:
+                self.exchange = None
                 self.exchange = await self.create_exchange()
                 self.market.set_exchange(self.exchange)
                 self.market_public.set_exchange(self.exchange)
@@ -153,9 +154,12 @@ class Application:
         )
         # exchange.verbose = True
         logging.info(f"cur exchange:{self.exchange_name}")
-        if has_sandbox:
+        if has_sandbox and os.getenv("RUN_ENV") == "dev":
             logging.info("set type as sandbox")
             exchange.setSandboxMode(True)  # enable sandbox mode
+        else:
+            logging.info("set type is prod")
+
         if hedge_account != None:
             hedge_account_api_key = hedge_account["spotAccount"]["apiKey"]
             hedge_account_api_secret = hedge_account["spotAccount"]["apiSecret"]
