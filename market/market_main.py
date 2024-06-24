@@ -118,6 +118,9 @@ class Market:
     async def get_spot_orderbook(self):
         return {"code": 0, "data": self.orderbook}
 
+    def get_symbol_list(self):
+        return self.market_symbol_list
+
     async def market_subscribe_main(self):
         logging.info("market_subscribe_main")
         try:
@@ -178,8 +181,8 @@ class Market:
         lastWatchTimestamp = int(time.time() * 1000)
         while True:
             await anyio.sleep(1)
-            logging.info(
-                f"exchange create time {self.exchange.exchange_create}")
+            # logging.info(
+            #     f"exchange create time {self.exchange.exchange_create}")
             # logging.info(f"watch {symbol}")
             loop_count += 1
             if loop_count % 20 == 0 or loop_count == 1:  # 20 seconds watchOrderbook
