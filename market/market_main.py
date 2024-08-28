@@ -131,13 +131,16 @@ class Market:
                         # start a task for each symbol
                         tg.start_soon(self.subscribe, symbol)
                 print(f"{self.exchange.id} market_subscribe_main() finished")
+                print("sys.exit 1")
                 sys.exit(1)
             except Exception as e:
                 print("market_subscribe_main() exception")
                 print(e)
+                print("sys.exit 2")
                 sys.exit(1)
         except Exception as e:
             print("subscribe market has a error:", e)
+            print("sys.exit 3")
             sys.exit(1)
 
     async def listen_message(self):
@@ -157,11 +160,13 @@ class Market:
                             print("msg", "🐟", msg)
                             if msg["type"] == "configResourceUpdate":
                                 await anyio.sleep(3)
+                                print("sys.exit 4")
                                 sys.exit()
                             if (
                                 msg["type"] == "tokenCreate"
                                 or msg["type"] == "tokenDelete"
                             ):
+                                print("sys.exit 5")
                                 sys.exit()
                     await anyio.sleep(0.1)
             except Exception as e:
