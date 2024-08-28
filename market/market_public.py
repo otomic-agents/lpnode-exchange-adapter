@@ -1,5 +1,5 @@
 import asyncio
-
+import logging
 
 class MarketPublic:
     def __init__(self, exchange):
@@ -8,8 +8,9 @@ class MarketPublic:
     async def fetchMarkets(self):
         try:
             markets = await self.exchange.fetchMarkets()
+            # logging.info(markets)
             usdt_usdc_markets = [market for market in markets if market['quote'] == 'USDT' or market['quote'] == 'USDC']
-            return usdt_markets
+            return usdt_usdc_markets
         except Exception as e:
             logging.error(e)
         
