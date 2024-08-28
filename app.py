@@ -72,8 +72,8 @@ class Application:
         # Every once in a while, re-create the exchange instance because the ccxt's watchOrderBook function tends to become unresponsive.
         logging.info("start refresh_exchange")
         while True:
-            await asyncio.sleep(30*1)
-            logging.info("🪰🪰🪰🪰🪰🪰recreate exchange...")
+            await asyncio.sleep(60*5)
+            logging.info("🪰🪰🪰🪰🪰🪰 recreate exchange...")
             if self.exchange != None:
                 try:
                     await asyncio.wait_for(self.exchange.close(), 5.0)
