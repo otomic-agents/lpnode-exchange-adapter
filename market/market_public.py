@@ -6,8 +6,13 @@ class MarketPublic:
         self.exchange = exchange
 
     async def fetchMarkets(self):
-        markets = await self.exchange.fetchMarkets()
-        return markets
+        try:
+            markets = await self.exchange.fetchMarkets()
+            usdt_usdc_markets = [market for market in markets if market['quote'] == 'USDT' or market['quote'] == 'USDC']
+            return usdt_markets
+        except Exception as e:
+            logging.error(e)
+        
 
     def set_exchange(self, exchange):
         self.exchange = exchange
