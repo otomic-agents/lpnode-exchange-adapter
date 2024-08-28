@@ -7,12 +7,14 @@ class MarketPublic:
 
     async def fetchMarkets(self):
         try:
-            markets = await self.exchange.fetchMarkets()
+            market = self.exchange.markets
             # logging.info(markets)
-            usdt_usdc_markets = [market for market in markets if market['quote'] == 'USDT' or market['quote'] == 'USDC']
-            return usdt_usdc_markets
+            filtered_market = {key: value for key, value in market.items() if value["quote"] in ["USDT", "USDC"]}
+            # usdt_usdc_markets = [market for market in markets if market['quote'] == 'USDT' or market['quote'] == 'USDC']
+            filtered_values = [value for value in filtered_market.values()]
+            return filtered_values
         except Exception as e:
-            logging.error(e)
+            print(e)
         
 
     def set_exchange(self, exchange):

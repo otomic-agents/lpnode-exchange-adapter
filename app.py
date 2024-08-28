@@ -72,7 +72,7 @@ class Application:
         # Every once in a while, re-create the exchange instance because the ccxt's watchOrderBook function tends to become unresponsive.
         logging.info("start refresh_exchange")
         while True:
-            await asyncio.sleep(60*5)
+            await asyncio.sleep(60*10)
             logging.info("🪰🪰🪰🪰🪰🪰 recreate exchange...")
             if self.exchange != None:
                 try:
@@ -152,6 +152,7 @@ class Application:
                 "type": exchange_config.get("type", "spot"),
             }
         )
+        
         # exchange.verbose = True
         logging.info(f"cur exchange:{self.exchange_name}")
         if has_sandbox and os.getenv("RUN_ENV") == "dev":
@@ -159,7 +160,8 @@ class Application:
             exchange.setSandboxMode(True)  # enable sandbox mode
         else:
             logging.info("set type is prod")
-
+        exchange.load_markets();
+        logging.info("load markets... (❁´◡`❁)")
         if hedge_account != None:
             hedge_account_api_key = hedge_account["spotAccount"]["apiKey"]
             hedge_account_api_secret = hedge_account["spotAccount"]["apiSecret"]
