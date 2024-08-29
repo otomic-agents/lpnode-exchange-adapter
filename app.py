@@ -160,7 +160,7 @@ class Application:
             exchange.setSandboxMode(True)  # enable sandbox mode
         else:
             logging.info("set type is prod")
-        exchange.load_markets();
+        await exchange.load_markets();
         logging.info("load markets... (❁´◡`❁)")
         if hedge_account != None:
             hedge_account_api_key = hedge_account["spotAccount"]["apiKey"]
