@@ -269,7 +269,7 @@ class Market:
         try:
             async with create_task_group() as tg:
                 # main subscription program
-                tg.start_soon(self.market_subscribe_main)
+                # tg.start_soon(self.market_subscribe_main)
                 tg.start_soon(self.listen_message)
                 tg.start_soon(self.report_status)
         except Exception as e:

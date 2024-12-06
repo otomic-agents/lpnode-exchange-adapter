@@ -9,3 +9,7 @@ application.log
 rt.py
 find.mongodb.js
 .vscode/
+result.log
+otmoic-ccxt-market/.vscode
+otmoic-ccxt-market/lp-env.sh
+build.sh
