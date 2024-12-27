@@ -7,8 +7,8 @@ export class AmmConfigService {
   @Autowired()
   protected mongoDto: MongoDto
   public async readAmmConfigFromDb(): Promise<IAmmConfigData> {
-    const configs: string[] = []
     for (; ;) {
+      const configs: string[] = [];
       const result = await this.mongoDto.getClient().db(this.mongoDto.conf.db).collection("configResources").find({}).toArray();
       if (result.length !== 1) {
         Logger.info(`There should only be one , number:${result.length}`)
