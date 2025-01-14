@@ -13,3 +13,5 @@ result.log
 otmoic-ccxt-market/.vscode
 otmoic-ccxt-market/lp-env.sh
 build.sh
+py-result.log
+otmoic-ccxt-market/node-result.log

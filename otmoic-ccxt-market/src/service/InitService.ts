@@ -126,6 +126,20 @@ export class InitService {
 
     Logger.info("Create CexExchange", exchangeName)
     const exchange: Exchange = new ccxtpro[exchangeName]({ newUpdates: false });
+    const runEnv = _.get(process, "env.RUN_ENV", "prod");
+    const supportsSandbox = typeof exchange.setSandboxMode === 'function';
+    if (supportsSandbox && runEnv === "dev") {
+      Logger.info(`🏖️  Exchange ${exchangeName} - Sandbox Support: ✅`);
+      Logger.info(`🔧 Environment: ${runEnv.toUpperCase()}`);
+      exchange.setSandboxMode(true);
+      Logger.info(`✨ Successfully enabled sandbox mode for ${exchangeName}`);
+    } else {
+      if (!supportsSandbox) {
+        Logger.warn(`⚠️  ${exchangeName} does not support sandbox mode`);
+      }
+      Logger.info(`🚀 Running ${exchangeName} in production mode`);
+      Logger.info(`🌍 Environment: ${runEnv.toUpperCase()}`);
+    }
     this.cexExchange = exchange
   }
 }

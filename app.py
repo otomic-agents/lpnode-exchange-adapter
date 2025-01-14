@@ -48,6 +48,7 @@ class Application:
         self.market = None
         self.account = None
         self.market_public = None
+        self.hedge_account_id = ""
 
     async def init(self):
         try:
@@ -131,7 +132,7 @@ class Application:
         logging.info('The HTTP service will start in 1 seconds.')
         await asyncio.sleep(1)
         port = os.environ.get("SERVICE_PORT", "18080")
-        await HttpServer(self.market, self.account, self.market_public).run(
+        await HttpServer(self.market, self.account, self.market_public,self.exchange,self.hedge_account_id).run(
             "0.0.0.0", port
         )
 
@@ -170,6 +171,7 @@ class Application:
             exchange.apiKey = hedge_account_api_key
             logging.info(f"exchange.apiKey: {exchange.apiKey}")
             exchange.secret = hedge_account_api_secret
+            self.hedge_account_id = hedge_config["hedgeAccount"]
             logging.info(f"exchange.secret: {exchange.secret}")
         else:
             logging.warning("No private accounts have been used.")
