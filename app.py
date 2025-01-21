@@ -93,22 +93,22 @@ class Application:
     async def report_status(self):
         while True:
             try:
-                status_key = os.environ.get("STATUS_KEY")
-                logging.info(f"set status {status_key}")
-                if status_key == None:
-                    await anyio.sleep(20)
-                    continue
-                logging.info(f"set status info to redis key:{status_key}")
-                status_data = {}
-                orderbook_data_ret = await self.market.get_spot_orderbook()
-                orderbook_data = orderbook_data_ret.get("data")
-                now = datetime.now()
-                formatted_now = now.strftime('%Y-%m-%d %H:%M:%S')
-                status_data["orderbook"] = orderbook_data
-                status_data["symbol_list"] = self.market.get_symbol_list()
-                status_data["last_update_time"] = formatted_now
-                self.redis_bus_client.set(
-                    status_key, json.dumps(status_data))
+                # status_key = os.environ.get("STATUS_KEY")
+                # logging.info(f"set status {status_key}")
+                # if status_key == None:
+                #     await anyio.sleep(20)
+                #     continue
+                # logging.info(f"set status info to redis key:{status_key}")
+                # status_data = {}
+                # orderbook_data_ret = await self.market.get_spot_orderbook()
+                # orderbook_data = orderbook_data_ret.get("data")
+                # now = datetime.now()
+                # formatted_now = now.strftime('%Y-%m-%d %H:%M:%S')
+                # status_data["orderbook"] = orderbook_data
+                # status_data["symbol_list"] = self.market.get_symbol_list()
+                # status_data["last_update_time"] = formatted_now
+                # self.redis_bus_client.set(
+                #     status_key, json.dumps(status_data))
             except Exception as e:
                 logging.info(f"error to set status:{e}")
             finally:

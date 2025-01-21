@@ -10,12 +10,46 @@ import { AmmConfigService } from './AmmConfigService';
 import { SystemMessageProcessService } from './SystemMessageProcessService';
 import * as _ from "lodash";
 import logger from '../utils/Log';
+import { StatusReportStoreService } from './StatusReportStoreService';
 const ccxtpro = require('ccxt').pro
 console.log('ccxt version', ccxtpro.version)
 console.log('exchanges:', ccxtpro.exchanges)
 @Service()
 export class InitService {
   private marketSymbolList: Map<string, boolean> = new Map();
+
+  private cacheData: any = {
+    orderbook: {},
+    symbol_list: [],
+    last_update_time: ''
+  };
+
+  @Autowired()
+  private statusReportStoreService: StatusReportStoreService;
+
+  private saveReport() {
+    this.statusReportStoreService.save(JSON.stringify(this.cacheData)).then(()=>{
+      logger.info("save ok")
+    }).catch((e)=>{
+      logger.info(e)
+    })
+  }
+
+  private updateOrderbook(symbol: string, orderbook: OrderBook) {
+    if (!this.cacheData.orderbook[symbol]) {
+      this.cacheData.orderbook[symbol] = {};
+    }
+    this.cacheData.orderbook[symbol] = orderbook;
+  }
+
+  private updateSymbolList(symbols: string[]) {
+    this.cacheData.symbol_list = symbols;
+  }
+
+  private updateLastTime() {
+    const now = new Date();
+    this.cacheData.last_update_time = new Date().getTime()
+  }
 
   @Autowired()
   protected mongoDto: MongoDto
@@ -42,6 +76,10 @@ export class InitService {
     setTimeout(() => {
       this.start()
     }, 1000 * 3)
+
+    setInterval(() => {
+      this.saveReport();
+    }, 1000 * 30)
   }
   private async start() {
     await this.systemMessageProcessService.startListen()
@@ -57,6 +95,11 @@ export class InitService {
     console.log(this.marketSymbolList)
     const keyArray = Array.from(this.marketSymbolList.keys());
     await this.redisStoreService.saveSymbols(keyArray);
+    const symbols: string[] = []
+    this.marketSymbolList.forEach((value, key) => {
+      symbols.push(key)
+    })
+    this.updateSymbolList(symbols)
     this.marketSymbolList.forEach((value, key) => {
       logger.markAsNewRoot();
       this.subscribe(key).then(() => {
@@ -89,6 +132,8 @@ export class InitService {
               lastReportTime = currentTime;
             }
             this.redisStoreService.save(this.cexExchange.name, symbol, JSON.stringify(orderbook));
+            this.updateOrderbook(symbol, orderbook)
+            this.updateLastTime()
             await new Promise(resolve => setTimeout(resolve, 800));
           } catch (e) {
             Logger.error(`🔴 Inner loop error for ${symbol}: ${e}`);
