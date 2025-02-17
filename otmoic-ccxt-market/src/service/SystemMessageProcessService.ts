@@ -6,7 +6,14 @@ export class SystemMessageProcessService {
   @Autowired()
   protected redisDto: RedisDto
   public async startListen() {
-    const subClient = await this.redisDto.getNewIns();
+    let subClient 
+    try {
+      subClient = await this.redisDto.getNewIns();
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    } catch (e) {
+      process.exit(1);
+    }
+    
     subClient.subscribe("LP_SYSTEM_Notice");
     subClient.on("message", (channel: string, message: string) => {
       const msg = JSON.parse(message);
