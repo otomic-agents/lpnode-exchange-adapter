@@ -48,6 +48,7 @@ class Application:
         self.market = None
         self.account = None
         self.market_public = None
+        self.hedge_account_id = ""
 
     async def init(self):
         try:
@@ -91,23 +92,7 @@ class Application:
 
     async def report_status(self):
         while True:
-            try:
-                status_key = os.environ.get("STATUS_KEY")
-                if status_key == None:
-                    await anyio.sleep(20)
-                    continue
-                logging.info(f"set status info to redis key:{status_key}")
-                orderbook_data_ret = await self.market.get_spot_orderbook()
-                orderbook_data = orderbook_data_ret.get("data")
-                now = datetime.now()
-                formatted_now = now.strftime('%Y-%m-%d %H:%M:%S')
-                orderbook_data["last_update_time"] = formatted_now
-                self.redis_bus_client.set(
-                    status_key, json.dumps(orderbook_data))
-            except Exception as e:
-                logging.info(f"error to set status:{e}")
-            finally:
-                await anyio.sleep(10)
+            await anyio.sleep(10)
 
     async def start_tasks(self):
         try:
@@ -127,7 +112,7 @@ class Application:
         logging.info('The HTTP service will start in 1 seconds.')
         await asyncio.sleep(1)
         port = os.environ.get("SERVICE_PORT", "18080")
-        await HttpServer(self.market, self.account, self.market_public).run(
+        await HttpServer(self.market, self.account, self.market_public,self.exchange,self.hedge_account_id).run(
             "0.0.0.0", port
         )
 
@@ -168,6 +153,7 @@ class Application:
             exchange.apiKey = hedge_account_api_key
             logging.info(f"exchange.apiKey: {exchange.apiKey}")
             exchange.secret = hedge_account_api_secret
+            self.hedge_account_id = hedge_config["hedgeAccount"]
             logging.info(f"exchange.secret: {exchange.secret}")
         else:
             logging.warning("No private accounts have been used.")

@@ -2,6 +2,7 @@ __pycache__/
 .idea
 .DS_Store
 venv
+setenv.sh
 .venv
 env
 env.sh
@@ -9,3 +10,9 @@ application.log
 rt.py
 find.mongodb.js
 .vscode/
+result.log
+otmoic-ccxt-market/.vscode
+otmoic-ccxt-market/lp-env.sh
+build.sh
+py-result.log
+otmoic-ccxt-market/node-result.log

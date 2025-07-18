@@ -1,4 +1,12 @@
- echo "magicpigdocker/otmoic-lpnode-exchange-adapter:v$1"
+#!/bin/bash
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <tag>"
+    exit 1
+fi
+TAG=$1
+echo "Building Docker image..."
+docker build -t magicpigdocker/images:$TAG .
+echo "Pushing Docker image..."
+docker push magicpigdocker/images:$TAG
 
- docker buildx  build --platform linux/amd64  . -t  magicpigdocker/otmoic-lpnode-exchange-adapter:v$1 -f Dockerfile
- docker push magicpigdocker/otmoic-lpnode-exchange-adapter:v$1
+echo "Docker image magicpigdocker/images:$TAG has been built and pushed successfully."
